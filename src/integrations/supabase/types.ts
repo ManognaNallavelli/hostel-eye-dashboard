@@ -14,7 +14,201 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      access_logs: {
+        Row: {
+          camera_id: string | null
+          created_at: string
+          entry_time: string | null
+          exit_time: string | null
+          id: string
+          name: string
+          rfid_tag_id: string | null
+          status: string
+          student_id: string
+        }
+        Insert: {
+          camera_id?: string | null
+          created_at?: string
+          entry_time?: string | null
+          exit_time?: string | null
+          id?: string
+          name: string
+          rfid_tag_id?: string | null
+          status: string
+          student_id: string
+        }
+        Update: {
+          camera_id?: string | null
+          created_at?: string
+          entry_time?: string | null
+          exit_time?: string | null
+          id?: string
+          name?: string
+          rfid_tag_id?: string | null
+          status?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
+      activity_feed: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+        }
+        Relationships: []
+      }
+      alerts: {
+        Row: {
+          alert_id: string
+          camera_id: string | null
+          created_at: string
+          id: string
+          location: string | null
+          message: string
+          severity: string
+          status: string
+          student_id: string | null
+          type: string
+        }
+        Insert: {
+          alert_id: string
+          camera_id?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          message: string
+          severity: string
+          status?: string
+          student_id?: string | null
+          type: string
+        }
+        Update: {
+          alert_id?: string
+          camera_id?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          message?: string
+          severity?: string
+          status?: string
+          student_id?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
+      cameras: {
+        Row: {
+          camera_id: string
+          id: string
+          last_updated: string
+          location: string
+          people_detected: number
+          status: string
+          stream_url: string | null
+        }
+        Insert: {
+          camera_id: string
+          id?: string
+          last_updated?: string
+          location: string
+          people_detected?: number
+          status?: string
+          stream_url?: string | null
+        }
+        Update: {
+          camera_id?: string
+          id?: string
+          last_updated?: string
+          location?: string
+          people_detected?: number
+          status?: string
+          stream_url?: string | null
+        }
+        Relationships: []
+      }
+      emergency_tracking: {
+        Row: {
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          status: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          status?: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          status?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
+      students: {
+        Row: {
+          created_at: string
+          id: string
+          last_entry_time: string | null
+          last_exit_time: string | null
+          name: string
+          parent_phone: string | null
+          phone: string | null
+          rfid_tag_id: string
+          room_number: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_entry_time?: string | null
+          last_exit_time?: string | null
+          name: string
+          parent_phone?: string | null
+          phone?: string | null
+          rfid_tag_id: string
+          room_number: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_entry_time?: string | null
+          last_exit_time?: string | null
+          name?: string
+          parent_phone?: string | null
+          phone?: string | null
+          rfid_tag_id?: string
+          room_number?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
