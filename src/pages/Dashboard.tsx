@@ -1,40 +1,77 @@
+import { useQuery } from "@tanstack/react-query";
 import { Users, UserCheck, UserX, AlertTriangle, ArrowUpRight, Clock } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-
-const stats = [
-  { label: "Total Students", value: "342", icon: Users, change: "+12 this week", color: "text-primary" },
-  { label: "Inside Hostel", value: "287", icon: UserCheck, change: "84% present", color: "text-success" },
-  { label: "Outside Hostel", value: "55", icon: UserX, change: "16% away", color: "text-warning" },
-  { label: "Alerts Today", value: "7", icon: AlertTriangle, change: "3 critical", color: "text-destructive" },
-];
-
-const recentAlerts = [
-  { id: 1, type: "Unauthorized Entry", location: "Gate B", time: "2 min ago", severity: "critical" },
-  { id: 2, type: "Prolonged Absence", student: "Rahul K.", time: "15 min ago", severity: "warning" },
-  { id: 3, type: "Crowd Limit Exceeded", location: "Common Room", time: "32 min ago", severity: "critical" },
-  { id: 4, type: "Late Return", student: "Priya S.", time: "1 hr ago", severity: "info" },
-  { id: 5, type: "RFID Mismatch", location: "Gate A", time: "2 hrs ago", severity: "warning" },
-];
-
-const activityFeed = [
-  { id: 1, text: "Amit R. entered through Gate A", time: "1 min ago" },
-  { id: 2, text: "Camera 3 detected 12 people in corridor", time: "3 min ago" },
-  { id: 3, text: "Sneha M. exited through Gate B", time: "5 min ago" },
-  { id: 4, text: "Night patrol started – Zone 2", time: "10 min ago" },
-  { id: 5, text: "System health check passed", time: "15 min ago" },
-  { id: 6, text: "Kavita P. entered through Gate A", time: "18 min ago" },
-];
-
-const severityClasses: Record<string, string> = {
-  critical: "bg-destructive/10 text-destructive",
-  warning: "bg-warning/10 text-warning",
-  info: "bg-primary/10 text-primary",
-};
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Dashboard() {
+  const { data: students } = useQuery({
+    queryKey: ["students"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("students").select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: alertsData } = useQuery({
+    queryKey: ["alerts-today"],
+    queryFn: async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { data, error } = await supabase.from("alerts").select("*").gte("created_at", today.toISOString()).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: recentAlerts } = useQuery({
+    queryKey: ["recent-alerts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("alerts").select("*").order("created_at", { ascending: false }).limit(5);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: activityFeed } = useQuery({
+    queryKey: ["activity-feed"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("activity_feed").select("*").order("created_at", { ascending: false }).limit(6);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const totalStudents = students?.length ?? 0;
+  const insideCount = students?.filter((s) => s.status === "inside").length ?? 0;
+  const outsideCount = students?.filter((s) => s.status === "outside").length ?? 0;
+  const alertsToday = alertsData?.length ?? 0;
+  const criticalToday = alertsData?.filter((a) => a.severity === "critical").length ?? 0;
+
+  const stats = [
+    { label: "Total Students", value: String(totalStudents), icon: Users, change: `${totalStudents} registered`, color: "text-primary" },
+    { label: "Inside Hostel", value: String(insideCount), change: `${totalStudents ? Math.round((insideCount / totalStudents) * 100) : 0}% present`, icon: UserCheck, color: "text-success" },
+    { label: "Outside Hostel", value: String(outsideCount), change: `${totalStudents ? Math.round((outsideCount / totalStudents) * 100) : 0}% away`, icon: UserX, color: "text-warning" },
+    { label: "Alerts Today", value: String(alertsToday), change: `${criticalToday} critical`, icon: AlertTriangle, color: "text-destructive" },
+  ];
+
+  const severityClasses: Record<string, string> = {
+    critical: "bg-destructive/10 text-destructive",
+    warning: "bg-warning/10 text-warning",
+    info: "bg-primary/10 text-primary",
+  };
+
+  const timeAgo = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.floor(mins / 60);
+    return `${hrs} hr${hrs > 1 ? "s" : ""} ago`;
+  };
+
   return (
     <DashboardLayout>
-      {/* Stats */}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
           <div key={s.label} className="glass-card stat-card-glow rounded-xl p-5">
@@ -52,41 +89,35 @@ export default function Dashboard() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        {/* Recent Alerts */}
         <div className="glass-card rounded-xl p-5 lg:col-span-2">
           <h2 className="mb-4 text-base font-semibold text-foreground">Recent Alerts</h2>
           <div className="space-y-3">
-            {recentAlerts.map((a) => (
+            {recentAlerts?.map((a) => (
               <div key={a.id} className="flex items-center justify-between rounded-lg bg-secondary/50 px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${severityClasses[a.severity]}`}>
-                    {a.severity}
-                  </span>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${severityClasses[a.severity] ?? ""}`}>{a.severity}</span>
                   <div>
                     <p className="text-sm font-medium text-foreground">{a.type}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {a.student ?? a.location}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{a.student_id ?? a.location ?? ""}</p>
                   </div>
                 </div>
-                <span className="text-xs text-muted-foreground">{a.time}</span>
+                <span className="text-xs text-muted-foreground">{timeAgo(a.created_at)}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Activity Feed */}
         <div className="glass-card rounded-xl p-5">
           <h2 className="mb-4 text-base font-semibold text-foreground">Activity Feed</h2>
           <div className="space-y-4">
-            {activityFeed.map((a) => (
+            {activityFeed?.map((a) => (
               <div key={a.id} className="flex gap-3">
                 <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
                 <div>
-                  <p className="text-sm text-foreground">{a.text}</p>
+                  <p className="text-sm text-foreground">{a.message}</p>
                   <p className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    {a.time}
+                    {timeAgo(a.created_at)}
                   </p>
                 </div>
               </div>
